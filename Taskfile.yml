@@ -1,0 +1,19 @@
+version: '3'
+
+
+env:
+  VAR1: "This is a global var"
+
+dotenv:
+  - ".env"
+
+tasks:
+  build:
+    env:
+      VAL: "{{.ENV_VALUE}}"
+    cmds:
+      - echo $VAL
+      - echo $VAR1
+    preconditions:
+      - test -f main.go
+    silent: true
