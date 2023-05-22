@@ -1,19 +1,76 @@
+# Current version of Taskfile
 version: '3'
 
-
-env:
-  VAR1: "This is a global var"
-
+# Loading values from .env file
 dotenv:
   - ".env"
 
+# Shell option
+set:
+  - "pipefail"
+
+# Global environment variable
+env:
+  APP_NAME: "demo-app"
+
+# Define interval in which task should check if file has been
+# modified or not
+interval: 200ms
+
 tasks:
-  build:
+  # Individual task
+  run-app:
+    # Overriding the name of taskfile
+    label: "Run application"
+    desc: "This task runs application"
+    # If summar is missing, description will be printed. If task does not have any summary or
+    # descriptino, a warining is shown
+    summary: |
+      This task runs application
+
+      Please make sure DB_PASSWORD is set in env variable
+    # Local variables
     env:
-      VAL: "{{.ENV_VALUE}}"
+      DB_NAME: "myDatabase"
+      DB_PASSWORD: '{{.DB_PASSWORD}}'
+    vars:
+      NAME: "harry"
     cmds:
-      - echo $VAL
-      - echo $VAR1
+      # Runs task once this task finishes
+      - defer:
+          task: cleanup
+      - go run main.go
+      - echo "{{.NAME}}"
+      - echo $DB_NAME
+      - echo $DB_PASSWORD
+      - echo $APP_NAME
+      - exit 0 | echo "Hello world"
+      # Referencing another task
+      - task: ls-fs
+      - task: build-app
+    # Checks file source file has been changed
+    sources:
+      - "main.go"
+    # Checks if task should not or not. If condition are not met, task will return an error
     preconditions:
       - test -f main.go
-    silent: true
+
+  build-app:
+    label: "Build application"
+    desc: "This task builds executable binary"
+    cmds:
+      - go build main.go
+
+  list-files:
+    aliases:
+      - "ls-fs"
+    label: "List all files"
+    desc: "List all files in dir"
+    cmds:
+      - ls -la
+
+  cleanup:
+    label: "Cleanup"
+    desc: "This task cleans up the temp files"
+    cmds:
+      - rm -rf main
